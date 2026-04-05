@@ -26,9 +26,15 @@ cd checkit-backend
 pnpm install
 ```
 2. Environment Configuration
-Copy the example environment file:
+Copy the example environment file for each of the services
+*User Service*
 ```bash
-cp .env.example .env
+cd apps/user &&  cp .env.example .env #cd into the apps/user directory and cp .env.example to .env
+```
+
+*Wallet Service*
+```bash
+cd ../wallet && cp .env.example .env #cd into the apps/wallet directory and cp .env.example to .env
 ```
 _Note: The default connnection strings in `.env.example` are pre-configured to work the the Docker setup below.
 
