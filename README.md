@@ -212,4 +212,4 @@ Each service has its own PostgreSQL instance. This was a deliberate choice: it e
 The service layer never calls `prisma.user.findUnique()` directly. It calls `this.userRepository.findById()` via an interface. This might look like extra boilerplate for a small project, but it means unit tests can inject a mock repository without any database setup, and the persistence layer is genuinely swappable.
 
 **Idempotency keys on wallet transactions.**
-`CreditWallet` and `DebitWallet` both require an `idempotency_key`. This protects against duplicate transactions on retried gRPC calls — a real concern in distributed systems where network failures can cause a client to retry a request that already succeeded.
+`CreditWallet` and `DebitWallet` both require an `idempotency_key`. This protects against duplicate transactions on retried gRPC calls, a real concern in distributed systems where network failures can cause a client to retry a request that already succeeded.
