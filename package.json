@@ -17,6 +17,11 @@
     "start:debug:wallet": "nest start --debug --watch wallet",
     "start:prod:user": "node dist/apps/user/main.js",
     "start:prod:wallet": "node dist/apps/wallet/main.js",
+    "prisma:gen:user": "cd ./apps/user && pnpm dlx prisma generate",
+    "prisma:gen:wallet": "cd ./apps/wallet && pnpm dlx prisma generate",
+    "prisma:migrate:user": "cd ./apps/user && pnpm dlx prisma migrate dev --name int",
+    "prisma:migrate:wallet": "cd ./apps/user && pnpm dlx prisma migrate dev --name init",
+
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
