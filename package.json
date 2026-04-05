@@ -6,8 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build:user": "nest build --workspace user",
-    "build:wallet": "nest build --workspace wallet",
+    "build:user": "nest build user",
+    "build:wallet": "nest build wallet",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start:user": "nest start user",
     "start:wallet": "nest start wallet",
@@ -25,9 +25,13 @@
     "test:e2e": "jest --config ./apps/checkit-backend/test/jest-e2e.json"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
+    "@grpc/reflection": "^1.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/microservices": "^11.1.18",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
@@ -80,7 +84,12 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "roots": [
-      "<rootDir>/apps/"
-    ]
+      "<rootDir>/apps/",
+      "<rootDir>/libs/"
+    ],
+    "moduleNameMapper": {
+      "^@app/proto(|/.*)$": "<rootDir>/libs/proto/src/$1",
+      "^y/proto(|/.*)$": "<rootDir>/libs/proto/src/$1"
+    }
   }
 }

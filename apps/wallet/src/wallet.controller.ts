@@ -1,42 +1,34 @@
-import { Controller, Body, Get, Post, Query } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
 import { WalletService } from './wallet.service';
-import { WalletTransactionDto, WalletUserIdentityDto } from './wallet.dto';
-import { Wallet } from './generated/prisma/client';
-import { plainToClass } from 'class-transformer';
-import { WalletDto } from './wallet.dto';
+import type {
+  CreateWalletRequest,
+  GetWalletRequest,
+  WalletTransactionRequest,
+  WalletResponse,
+} from './wallet.interface';
 
-@Controller("wallet")
+@Controller()
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
-  @Post('credit')
-  async credit(@Body() dto: WalletTransactionDto): Promise<WalletDto> {
-    const wallet = await this.walletService.creditWallet(dto.userId, dto.amount, dto.idempotencyKey);
-    return this.mapToWalletDto(wallet)
+  @GrpcMethod('WalletService', 'CreateWallet')
+  async createWallet(data: CreateWalletRequest): Promise<WalletResponse> {
+    return this.walletService.createWallet(data.userId);
   }
 
-  @Post('debit')
-  async debit(@Body() dto: WalletTransactionDto): Promise<WalletDto> {
-    const wallet = await this.walletService.debitWallet(dto.userId, dto.amount, dto.idempotencyKey);
-    return this.mapToWalletDto(wallet)
+  @GrpcMethod('WalletService', 'GetWallet')
+  async getWallet(data: GetWalletRequest): Promise<WalletResponse> {
+    return this.walletService.getWallet(data.userId);
   }
 
-  @Post()
-  async create(@Body() dto: WalletUserIdentityDto): Promise<WalletDto> {
-    const wallet = await this.walletService.createWallet(dto.userId);
-    return this.mapToWalletDto(wallet)
+  @GrpcMethod('WalletService', 'CreditWallet')
+  async creditWallet(data: WalletTransactionRequest): Promise<WalletResponse> {
+    return this.walletService.creditWallet(data.userId, data.amount, data.idempotencyKey);
   }
 
-  @Get()
-  async get(@Query() dto: WalletUserIdentityDto): Promise<WalletDto> {
-    const wallet =  await this.walletService.getWallet(dto.userId);
-    return this.mapToWalletDto(wallet)
-  }
-
-  private async mapToWalletDto(wallet: Wallet): Promise<WalletDto> {
-    return plainToClass(WalletDto, {
-      ...wallet,
-      balance: wallet.balance.toString(),
-    })
+  @GrpcMethod('WalletService', 'DebitWallet')
+  async debitWallet(data: WalletTransactionRequest): Promise<WalletResponse> {
+    return this.walletService.debitWallet(data.userId, data.amount, data.idempotencyKey);
   }
 }

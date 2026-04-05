@@ -1,28 +1,20 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
 import { UserService } from './user.service';
-import { User } from './generated/prisma/client';
-import { plainToClass } from 'class-transformer';
-import { UserIdentityDto, UserDto, CreateUserDto } from './user.dto';
+import type { CreateUserRequest, GetUserByIdRequest, UserResponse, CreateUserResponse} from './user.interface'
+import { CreateUserDto } from './user.dto';
 
-@Controller('user')
+@Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  async create(@Body() req: CreateUserDto): Promise<UserDto> {
-    const user = await this.userService.createUser(req);
-    return this.mapToDto(user);
-  }
+@GrpcMethod('UserService', 'CreateUser')
+async createUser(data: CreateUserDto): Promise<CreateUserResponse> {
+  return this.userService.createUser(data);
+}
 
-  @Get()
-  async get(@Query() req: UserIdentityDto): Promise<UserDto> {
-    const user = await this.userService.getUserById(req.userId);
-    return this.mapToDto(user);
-  }
-
-  private mapToDto(user: User): UserDto {
-    return plainToClass(UserDto, {
-      ...user,
-    });
+  @GrpcMethod('UserService', 'GetUserById')
+  async getUserById(data: GetUserByIdRequest): Promise<UserResponse> {
+    return this.userService.getUserById(data.id);
   }
 }

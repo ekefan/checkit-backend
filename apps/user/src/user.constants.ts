@@ -1,0 +1,1 @@
+export const WALLET_SERVICE = 'WALLET_SERVICE';

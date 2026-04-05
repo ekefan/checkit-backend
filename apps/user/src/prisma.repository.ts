@@ -36,7 +36,7 @@ export class UserPrismaRepository implements IUserRepository {
 				where: { id },
 			});
 
-			if (!user) throw new NotFoundException('User not found');
+			if (!user) throw new NotFoundException('No user known with this id');
 			return user;
 		} catch (error) {
 			if (error instanceof NotFoundException) throw error;
