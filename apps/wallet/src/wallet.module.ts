@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { WalletController } from './wallet.controller';
 import { WalletService } from './wallet.service';
 import { ConfigModule } from '@nestjs/config';
+import { PrismaService } from "./prisma.service"; 
 import * as path from 'path';
 @Module({
   imports: [
@@ -12,6 +13,6 @@ import * as path from 'path';
     })
   ],
   controllers: [WalletController],
-  providers: [WalletService],
+  providers: [WalletService, PrismaService],
 })
 export class WalletModule {}
