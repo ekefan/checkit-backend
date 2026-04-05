@@ -1,29 +1,43 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Body, Get, Post, Query } from '@nestjs/common';
 import { WalletService } from './wallet.service';
+import { WalletTransactionDto, WalletUserIdentityDto } from './wallet.dto';
+import { Wallet } from './generated/prisma/client';
+import { plainToClass } from 'class-transformer';
+import { WalletDto } from './wallet.dto';
 
 @Controller("wallet")
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
-  @Get("id")
-  async getWallet(){
-    await this.walletService.getWallet()
+  @Post('credit')
+  async credit(@Body() dto: WalletTransactionDto): Promise<WalletDto> {
+    const wallet = await this.walletService.creditWallet(dto.userId, dto.amount, dto.idempotencyKey);
+    return this.mapToWalletDto(wallet)
+  }
+
+  @Post('debit')
+  async debit(@Body() dto: WalletTransactionDto): Promise<WalletDto> {
+    const wallet = await this.walletService.debitWallet(dto.userId, dto.amount, dto.idempotencyKey);
+    return this.mapToWalletDto(wallet)
   }
 
   @Post()
-  async createWallet(){
-    await this.walletService.createWallet()
+  async create(@Body() dto: WalletUserIdentityDto): Promise<WalletDto> {
+    const wallet = await this.walletService.createWallet(dto.userId);
+    return this.mapToWalletDto(wallet)
   }
 
-  @Post("debit")
-  async debitWallet(){
-    await this.walletService.debitWallet()
+  @Get()
+  async get(@Query() dto: WalletUserIdentityDto): Promise<WalletDto> {
+    const wallet =  await this.walletService.getWallet(dto.userId);
+    return this.mapToWalletDto(wallet)
   }
 
-  @Post("credit")
-  async creditWallet(){
-    await this.walletService.creditWallet()
+  private async mapToWalletDto(wallet: Wallet): Promise<WalletDto> {
+    return plainToClass(WalletDto, {
+      ...wallet,
+      balance: wallet.balance.toString(),
+      createdAt: wallet.createdAt.toISOString(),
+    })
   }
-
-  
 }

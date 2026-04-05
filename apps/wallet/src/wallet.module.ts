@@ -4,6 +4,8 @@ import { WalletService } from './wallet.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from "./prisma.service"; 
 import * as path from 'path';
+import { WalletPrismaRepository } from './prisma.repository';
+import { IWalletRepository } from './wallet.respository';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -13,6 +15,13 @@ import * as path from 'path';
     })
   ],
   controllers: [WalletController],
-  providers: [WalletService, PrismaService],
+  providers: [
+    WalletService,
+    PrismaService,
+    {
+      provide: IWalletRepository,
+      useClass: WalletPrismaRepository
+    }
+    ],
 })
 export class WalletModule {}

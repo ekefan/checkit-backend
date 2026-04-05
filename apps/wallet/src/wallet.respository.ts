@@ -1,4 +1,4 @@
-import { Wallet } from './wallet.entity'
+import { Wallet } from "./generated/prisma/client"
 
 export abstract class IWalletRepository {
   abstract createWallet(userId: string): Promise<Wallet>;
