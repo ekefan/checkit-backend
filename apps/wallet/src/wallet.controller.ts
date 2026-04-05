@@ -1,12 +1,29 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 
-@Controller()
+@Controller("wallet")
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
-  @Get()
-  getHello(): string {
-    return this.walletService.getHello();
+  @Get("id")
+  async getWallet(){
+    await this.walletService.getWallet()
   }
+
+  @Post()
+  async createWallet(){
+    await this.walletService.createWallet()
+  }
+
+  @Post("debit")
+  async debitWallet(){
+    await this.walletService.debitWallet()
+  }
+
+  @Post("credit")
+  async creditWallet(){
+    await this.walletService.creditWallet()
+  }
+
+  
 }
