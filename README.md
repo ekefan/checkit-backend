@@ -31,6 +31,7 @@ Copy the example environment file:
 cp .env.example .env
 ```
 _Note: The default connnection strings in `.env.example` are pre-configured to work the the Docker setup below.
+
 3. Database Setup:
   Spin up the PostgesSQL containers for both the User and Wallet services:
 ```bash
