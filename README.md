@@ -127,3 +127,89 @@ grpcurl -plaintext -d '{"user_id": "<user_id>", "amount": 500, "idempotency_key"
 grpcurl -plaintext -d '{"user_id": "<user_id>", "amount": 200, "idempotency_key": "txn_002"}' \
   0.0.0.0:1902 wallet.WalletService/DebitWallet
 ```
+
+## File Structure:
+checkit-backend
+┣ apps/
+┃ ┣ user/                        # User microservice
+┃ ┃ ┣ prisma/                    # Schema and migrations
+┃ ┃ └── src/
+┃ ┃     ├── main.ts              # Service entrypoint
+┃ ┃     ├── user.module.ts       # NestJS module wiring
+┃ ┃     ├── user.controller.ts   # gRPC handler (adapter/port in)
+┃ ┃     ├── user.service.ts      # Core business logic
+┃ ┃     ├── user.repository.ts   # Base repository abstraction
+┃ ┃     ├── user.interface.ts    # User Service rpc Server contract
+┃ ┃     ├── wallet.interface.ts  # Wallet service client contract
+┃ ┃     ├── user.dto.ts          # Request/response models
+┃ ┃     ├── user.validator.ts    # Input validation
+┃ ┃     ├── user.constants.ts    # gRPC constant for rpc client
+┃ ┃     ├── prisma.service.ts    # Prisma client wrapper
+┃ ┃     └── prisma.repository.ts # Concrete DB implementation
+┃ └── wallet/                    # Wallet microservice (mirrors user structure)
+┃     ├── prisma/
+┃     └── src/                   # similar with User service
+┃         ├── main.ts
+┃         ├── wallet.module.ts
+┃         ├── wallet.controller.ts
+┃         ├── wallet.service.ts
+┃         ├── wallet.repository.ts
+┃         ├── wallet.interface.ts
+┃         ├── user.interface.ts   # User service client contract
+┃         ├── wallet.dto.ts
+┃         ├── wallet.validator.ts
+┃         ├── wallet.constants.ts
+┃         ├── prisma.service.ts
+┃         └── prisma.repository.ts
+┣ proto/
+┃ ┣ user.proto                   # UserService gRPC contract
+┃ └── wallet.proto               # WalletService gRPC contract
+┣ infra/
+┃ └── compose.yml                # Docker services for both databases
+└── [config files]               # tsconfig, eslint, nest-cli, etc.
+
+Each service is self-contained with its own database, migrations, and Prisma client. There is intentionally no shared `libs/` package — see [Self-Critique](#self-critique) for why.
+
+---
+
+## Architecture
+
+This project applies good software engineering architecture principles within NestJS's opinionated structure. The goal is to keep the core logic free of infrastructure concerns... the database, the transport layer, and external services are all treated as details plugged in from the outside.
+
+### How it maps in practice
+
+**Ports (interfaces)** define what the application needs — they describe the contract without caring about the implementation. Each service has:
+- A **repository interface** (e.g. `IUserRepository`) that the service layer depends on, never the concrete Prisma class directly
+- A **client interface** (e.g. `IWalletServiceClient`) for cross-service gRPC calls, so the user service can talk to the wallet service through a typed contract, not a hard dependency, making testing easy.
+
+**Adapters (implementations)** are what actually fulfill those contracts:
+- `user.repository.ts` / `wallet.repository.ts` are the concrete Prisma adapters wired in via NestJS DI
+- `wallet.controller.ts` / `user.controller.ts` are the inbound adapters — they receive gRPC calls and delegate straight to the service layer, doing no business logic themselves
+
+**The service layer** (`user.service.ts`, `wallet.service.ts`) sits in the middle. It only knows about interfaces. Swapping Prisma for another ORM, or gRPC for REST, would not require touching business logic.
+
+---
+
+## Self-Critique
+
+### The shared proto types problem
+The most honest structural gap in this project is the duplication of gRPC interface types across services. `wallet.interface.ts` lives inside the user app, and `user.interface.ts` lives inside the wallet app — each defining the other service's client contract independently.
+
+The right solution is a shared `libs/` package:
+libs/
+└── shared/
+├── user.interface.ts
+└── wallet.interface.ts
+
+Both apps would then import from `@app/shared` rather than maintaining their own copies. This is straightforward in a Nx or NestJS monorepo setup. I ran into module resolution configuration issues getting this wired up correctly and made the pragmatic call to keep moving — but it is the right next step.
+
+### Other design decisions worth noting
+
+**Two separate databases, not one.**
+Each service has its own PostgreSQL instance. This was a deliberate choice: it enforces the bounded context boundary at the data layer. The user service cannot accidentally join against wallet tables. It adds operational overhead but means each service can evolve its schema independently without coordination.
+
+**Repository interfaces over direct Prisma calls.**
+The service layer never calls `prisma.user.findUnique()` directly. It calls `this.userRepository.findById()` via an interface. This might look like extra boilerplate for a small project, but it means unit tests can inject a mock repository without any database setup, and the persistence layer is genuinely swappable.
+
+**Idempotency keys on wallet transactions.**
+`CreditWallet` and `DebitWallet` both require an `idempotency_key`. This protects against duplicate transactions on retried gRPC calls — a real concern in distributed systems where network failures can cause a client to retry a request that already succeeded.
