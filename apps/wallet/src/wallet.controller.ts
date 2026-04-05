@@ -37,7 +37,6 @@ export class WalletController {
     return plainToClass(WalletDto, {
       ...wallet,
       balance: wallet.balance.toString(),
-      createdAt: wallet.createdAt.toISOString(),
     })
   }
 }

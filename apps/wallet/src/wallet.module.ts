@@ -22,6 +22,6 @@ import { IWalletRepository } from './wallet.respository';
       provide: IWalletRepository,
       useClass: WalletPrismaRepository
     }
-    ],
+  ],
 })
 export class WalletModule {}
