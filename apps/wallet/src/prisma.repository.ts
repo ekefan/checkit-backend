@@ -1,4 +1,4 @@
-import { Injectable, HttpException, NotFoundException, BadRequestException, ConflictException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, HttpException, NotFoundException, BadRequestException, ConflictException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { IWalletRepository } from './wallet.respository';
 import { PrismaService } from './prisma.service';
 import { Wallet, Prisma } from "./generated/prisma/client"
@@ -14,6 +14,7 @@ export class WalletPrismaRepository implements IWalletRepository {
       });
       return wallet;
     } catch (e) {
+      Logger.error(`failed to create wallet for user with id: ${userId}`)
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         console.log(`failed to create wallet, wallet already exist for this user ${e}, userid; ${userId}`)
         throw new ConflictException('Wallet already exists for this user');
@@ -26,7 +27,6 @@ export class WalletPrismaRepository implements IWalletRepository {
   async getWalletByUserId(userId: string): Promise<Wallet> {
     const wallet = await this.prisma.wallet.findUnique({ where: { userId } });
     if (!wallet) throw new NotFoundException('Wallet not found')
-    console.log(`succesfully fetched user wallet, userid; ${userId}`)
     return wallet;
   }
 
@@ -40,11 +40,11 @@ async creditWallet(userId: string, idempotencyKey: string, amount: number): Prom
 
       const existing = await tx.transaction.findUnique({ where: { idempotencyKey } });
       if (existing) throw new ConflictException('Duplicate request: transaction already processed');
-
+      Logger.log(`recording credit transction for credit action, user_id: ${userId}`)
       await tx.transaction.create({
         data: { walletId: wallet.id, amount, type: 'CREDIT', idempotencyKey },
       });
-
+      Logger.log(`updating wallet after credit action, user_id: ${userId}`)
       return await tx.wallet.update({
         where: { userId },
         data: { balance: wallet.balance + BigInt(amount) },
@@ -73,10 +73,12 @@ async debitWallet(userId: string, idempotencyKey: string, amount: number): Promi
       const existing = await tx.transaction.findUnique({ where: { idempotencyKey } });
       if (existing) throw new ConflictException('Duplicate request: transaction already processed');
 
+      Logger.log(`recording debit transction for debit action, user_id: ${userId}`)
       await tx.transaction.create({
         data: { walletId: wallet.id, amount, type: 'DEBIT', idempotencyKey },
       });
 
+      Logger.log(`updating wallet after debit action, user_id: ${userId}`)
       return await tx.wallet.update({
         where: { userId },
         data: { balance: wallet.balance - BigInt(amount) },

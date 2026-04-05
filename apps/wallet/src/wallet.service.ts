@@ -23,10 +23,12 @@ export class WalletService implements OnModuleInit {
   }
 
   async createWallet(userId: string): Promise<WalletResponse> {
+    Logger.log(`creating wallet for user with id: ${userId}`)
     try{
       const user = await firstValueFrom(this.userService.getUserById({ id: userId }));
       if (!user) throw GrpcErrors.notFound('No user is known with this id');
       const wallet = await this.walletRepo.createWallet(userId);
+      Logger.log(`created wallet for user, id: ${userId}, wallet id: ${wallet.id}`)
       return this.toResponse(wallet);
     } catch (error) {
       this.handleGrpcError(error, 'creating wallet')
@@ -35,8 +37,10 @@ export class WalletService implements OnModuleInit {
   }
 
   async creditWallet(userId: string, amount: number, idempotencyKey: string): Promise<WalletResponse> {
+    Logger.log(`crediting wallet for user with id: ${userId}`)
     try{
       const wallet = await this.walletRepo.creditWallet(userId, idempotencyKey, amount);
+      Logger.log(`credited wallet for user with id: ${userId}`)
       return this.toResponse(wallet);
     } catch (error) {
       this.handleGrpcError(error, 'credit')
@@ -45,7 +49,9 @@ export class WalletService implements OnModuleInit {
 
   async debitWallet(userId: string, amount: number, idempotencyKey: string): Promise<WalletResponse> {
     try{ 
+      Logger.log(`debiting wallet for user with id: ${userId}`)
       const wallet = await this.walletRepo.debitWallet(userId, idempotencyKey, amount);
+      Logger.log(`debited wallet for user with id: ${userId}`)
       return this.toResponse(wallet);
     } catch (error) {
       this.handleGrpcError(error, 'debit')
@@ -54,10 +60,13 @@ export class WalletService implements OnModuleInit {
 
   async getWallet(userId: string): Promise<WalletResponse> {
     try{
+      Logger.log(`fetching wallet for user with id: ${userId}`)
       const wallet = await this.walletRepo.getWalletByUserId(userId);
       if (!wallet) throw GrpcErrors.notFound('no user with id found');
+      Logger.log(`fetch wallet for user... id: ${userId}`)
       return this.toResponse(wallet);
     } catch (error) {
+      Logger.error(`failed to fetch wallet, user id: ${userId}`)
       this.handleGrpcError(error, 'getting wallet')
     }
   }
