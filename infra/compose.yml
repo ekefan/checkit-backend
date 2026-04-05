@@ -1,0 +1,54 @@
+services:
+  user-postgres:
+    image: postgres:16-alpine
+    container_name: checkit_pg_user
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: userdb
+    ports:
+      - "5434:5432"
+    volumes:
+      - userpgdata:/var/lib/postgresql/data
+
+  wallet-postgres:
+    image: postgres:16-alpine
+    container_name: checkit_pg_wallet
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: walletdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - walletpgdata:/var/lib/postgresql/data
+
+  user-service:
+    build:
+      context: ../apps/user
+      dockerfile: Dockerfile
+    container_name: user-service
+    depends_on:
+      - user-postgres
+    environment:
+      DATABASE_URL: user-postgres://postgres:password@postgres:5434/userdb
+    ports:
+      - "1901:1901"
+
+  wallet-service:
+    build:
+      context: ../apps/wallet
+      dockerfile: Dockerfile
+    container_name: wallet-service
+    depends_on:
+      - wallet-postgres
+      - user-service
+    environment:
+      DATABASE_URL: wallet-postgres://postgres:password@postgres:5433/walletdb
+      USER_SERVICE_URL: user-service:50051
+    ports:
+      - "1902:1902"
+
+volumes:
+  userpgdata:
+  walletpgdata:
