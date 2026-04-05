@@ -24,10 +24,11 @@ export class UserService implements OnModuleInit {
   }
 
   async createUser(data: { email: string; name: string }): Promise<CreateUserResponse> {
+    Logger.log(`creating user`)
     try{
       const user = await this.userRepo.createUser(data);
       const wallet = await firstValueFrom(this.walletService.createWallet({ userId: user.id }));
-
+      Logger.log(`created user, user_id: ${user.id}`)
       return {
         ...this.toResponse(user),
         walletId: wallet.id,
@@ -41,6 +42,7 @@ export class UserService implements OnModuleInit {
   }
 
   async getUserById(userId: string): Promise<UserResponse> {
+    Logger.log(`getting user with id: ${userId}`)   
     const user = await this.userRepo.getUserById(userId);
     if (!user) throw GrpcErrors.notFound('No user is known with this id');
     return this.toResponse(user);
