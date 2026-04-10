@@ -209,7 +209,7 @@ Both apps would then import from `@app/shared` rather than maintaining their own
 Each service has its own PostgreSQL instance. This was a deliberate choice: it enforces the bounded context boundary at the data layer. The user service cannot accidentally join against wallet tables. It adds operational overhead but means each service can evolve its schema independently without coordination.
 
 **Repository interfaces over direct Prisma calls.**
-The service layer never calls `prisma.user.findUnique()` directly. It calls `this.userRepository.findById()` via an interface. This might look like extra boilerplate for a small project, but it means unit tests can inject a mock repository without any database setup, and the persistence layer is genuinely swappable.   v.
+The service layer never calls `prisma.user.findUnique()` directly. It calls `this.userRepository.findById()` via an interface. This might look like extra boilerplate for a small project, but it means unit tests can inject a mock repository without any database setup, and the persistence layer is genuinely swappable.
 
 **Idempotency keys on wallet transactions.**
 `CreditWallet` and `DebitWallet` both require an `idempotency_key`. This protects against duplicate transactions on retried gRPC calls, a real concern in distributed systems where network failures can cause a client to retry a request that already succeeded.
